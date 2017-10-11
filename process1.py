@@ -12,6 +12,7 @@ DEFAULT_LOG_FOLDER = "logs"
 DEFAULT_OUTPUT_FOLDER = "output"
 OUTPUT_FIXTURE = 'csv'
 LOG_FIXTURE = 'log'
+DEFAULT_DELAY = 0
 
 def create_parser():
     """
@@ -24,8 +25,8 @@ def create_parser():
     parser.add_argument('-n', '--depth', dest='depth', type=int, help='The depth for which the crawler should crawl.',
                         default=DEFAULT_DEPTH)
     parser.add_argument('-d', '--domains', dest='domains', type=str,
-                        help='The domains which the crawler should crawl, if given several domains'
-                             'separated by space the crawler will crawl them all (Note that in case of several domains'
+                        help='The domains which the crawler should crawl, if given several domains '
+                             'separated by space the crawler will crawl them all (Note that in case of several domains '
                              'the arguments need to be surrounded by "").',
                         required=True)
     parser.add_argument('-s', '--silent', dest='silent',
@@ -38,16 +39,21 @@ def create_parser():
                         )
     parser.add_argument('--output-file', dest='output_file', type=str, default=None,
                         help="If the flag is present than the output of the crawl will be written to the filename "
-                             "given in the path, otherwise the output will be written to a file with the following name"
+                             "given in the path, otherwise the output will be written to a file with the following name "
                              "[datetime] [net locations of domains given].csv")
     parser.add_argument('--logs-folder', dest='logs_folder', type=str, default=DEFAULT_LOG_FOLDER,
-                        help="If the flag is present than the logs from the crawl will be saved in the path"
+                        help="If the flag is present than the logs from the crawl will be saved in the path "
                              "given in the argument, otherwise the logs will be saved in the logs folder in the "
                              "current directory")
     parser.add_argument('--output-folder', dest='output_folder', type=str, default=DEFAULT_OUTPUT_FOLDER,
-                        help="If the flag is present than the output from the crawl will be saved in the path"
+                        help="If the flag is present than the output from the crawl will be saved in the path "
                              "given in the argument, otherwise the output will be saved in the output folder in the "
                              "current directory")
+    parser.add_argument('--delay', dest='delay', type=float, default=DEFAULT_DELAY,
+                        help="Set the delay between each request of the crawler, The input is in SECONDS. for example --delay 0.25")
+    parser.add_argument('--user-agent', dest='user_agent', type=str, default=None,
+                        help="Set hardcoded the user agent that the crawler will use, by default the crawler sets a random user agent "
+                             "from a predefined list of user agents (There is no check if the user agent is valid!).")
     return parser
 
 
@@ -104,7 +110,8 @@ def run(parser):
     :return: A configured crawler instance.
     """
     args, allowed_domains = format_arguments(parser.parse_args())
-    crawl(args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.output_file)
+    print args
+    crawl(args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.output_file, args.delay, args.user_agent)
 
 
 if __name__ == '__main__':
