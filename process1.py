@@ -1,16 +1,17 @@
 """
-A basic scrapper which receives a domain
+A basic scrapper which receives a domain name and returns all of the links in the domain.
 """
 import argparse
 from datetime import datetime as dt
-import uuid
 from cookieMuncher.spiders.cookie_muncher import crawl
 import os
+from urlparse import urlparse
 
 DEFAULT_DEPTH = 3
 DEFAULT_LOG_FOLDER = "logs"
 DEFAULT_OUTPUT_FOLDER = "output"
-
+OUTPUT_FIXTURE = 'csv'
+LOG_FIXTURE = 'log'
 
 def create_parser():
     """
@@ -22,20 +23,23 @@ def create_parser():
                         help='Searches only links from the current domain if flag is present', action='store_true')
     parser.add_argument('-n', '--depth', dest='depth', type=int, help='The depth for which the crawler should crawl.',
                         default=DEFAULT_DEPTH)
-    parser.add_argument('-d', '--domain', dest='domain', type=str, help='The domain which the crawler should crawl',
+    parser.add_argument('-d', '--domains', dest='domains', type=str,
+                        help='The domains which the crawler should crawl, if given several domains'
+                             'separated by space the crawler will crawl them all (Note that in case of several domains'
+                             'the arguments need to be surrounded by "").',
                         required=True)
     parser.add_argument('-s', '--silent', dest='silent',
                         help='Will not log the crawling process if the flag is present.',
                         action='store_true')
     parser.add_argument('--log-file', dest='log_file', type=str, default=None, nargs='?', const='',
                         help="The folder to which the logs will be saved to, if the flag is present but empty "
-                             "the logs will be saved to a file with the following name: [datetime]-[random id].log"
+                             "the logs will be saved to a file with the following name: [datetime] [net locations of domains given].log. "
                              "If the flag isn't present the log will be printed to stdout"
                         )
     parser.add_argument('--output-file', dest='output_file', type=str, default=None,
                         help="If the flag is present than the output of the crawl will be written to the filename "
                              "given in the path, otherwise the output will be written to a file with the following name"
-                             "[datetime]-[random id].csv")
+                             "[datetime] [net locations of domains given].csv")
     parser.add_argument('--logs-folder', dest='logs_folder', type=str, default=DEFAULT_LOG_FOLDER,
                         help="If the flag is present than the logs from the crawl will be saved in the path"
                              "given in the argument, otherwise the logs will be saved in the logs folder in the "
@@ -48,23 +52,49 @@ def create_parser():
 
 
 def check_directory_exists(path):
+    """
+    Checks if the path exists, if it doesn't creates it.
+    :param path: The path to be checked.
+    """
     if not os.path.exists(path):
         os.makedirs(path)
 
 
+def generate_file_name(folder, domains, fixture):
+    """
+    Creates the file name from the folder and domains that the crawler will crawl.
+    the file name will be: [datetime] [net locations of domains given].[fixture]
+    :param folder: The folder where the file we be saved
+    :param domains: The domains the crawler will crawl.
+    :param fixture: The fixture of the file.
+    :return: The full path to the file.
+    """
+    return os.path.join(folder,
+                 "{} {}.{}".format(str(dt.now()).replace(':', '.'), generate_netlocations_from_domains(domains), fixture))
+
+
+def generate_netlocations_from_domains(domains):
+    return list({urlparse(domain).netloc for domain in domains.split()})
+
 def format_arguments(args):
-    print args
+    """
+    Formats the arguments given to the script.
+    :param args: The args given to the script.
+    :return: The formatted args.
+    """
+    allowed_domains = []
+    if args.domain_only:
+        allowed_domains = generate_netlocations_from_domains(args.domains)
     if args.output_file is None:
-        args.output_file = os.path.join(args.output_folder,
-                                        "{} {}.csv".format(str(dt.now()).replace(':', '.'), uuid.uuid4().get_hex()))
+        args.output_file = generate_file_name(args.output_folder, args.domains, OUTPUT_FIXTURE)
     if args.silent:
         args.log_file = None
     if args.log_file == '':
-        args.log_file = os.path.join(args.logs_folder,
-                                     "{} {}.log".format(str(dt.now()).replace(':', '.'), uuid.uuid4().get_hex()))
+        args.log_file = generate_file_name(args.logs_folder, args.domains, LOG_FIXTURE)
+    args.domains = args.domains.split()
     check_directory_exists(args.logs_folder)
     check_directory_exists(args.output_folder)
-    return args
+    return args, allowed_domains
 
 
 def run(parser):
@@ -73,10 +103,8 @@ def run(parser):
     :param parser: A configured instance of argsParser
     :return: A configured crawler instance.
     """
-    args = format_arguments(parser.parse_args())
-
-    print args
-    crawl(args.domain, args.domain_only, args.depth, args.silent, args.log_file, args.output_file)
+    args, allowed_domains = format_arguments(parser.parse_args())
+    crawl(args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.output_file)
 
 
 if __name__ == '__main__':

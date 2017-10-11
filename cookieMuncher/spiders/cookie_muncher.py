@@ -1,7 +1,6 @@
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scrapy.crawler import CrawlerProcess
-from urlparse import urlparse
 from datetime import datetime as dt
 
 from cookieMuncher.items import CookieMuncherItem
@@ -18,8 +17,6 @@ class CookieMuncherSpider(CrawlSpider):
         super(CookieMuncherSpider, self).__init__(*args, **kwargs)
         self.allowed_domains = allowed_domains
         self.start_urls = start_urls
-        print self.allowed_domains
-        print self.start_urls
 
     def parse_item(self, response):
         item = CookieMuncherItem()
@@ -27,11 +24,11 @@ class CookieMuncherSpider(CrawlSpider):
         item['time'] = dt.now()
         return item
 
-def crawl(url, domain_only, depth, silent, log_file, output_file):
+def crawl(urls, allowed_domains, depth, silent, log_file, output_file):
     """
     Start crawling with CookieMuncher spider.
-    :param url: The url from which the crawlers should start crawling
-    :param domain_only: If True the crawlers will only crawl links from the given domain
+    :param urls: The list of urls from which the crawlers should start crawling
+    :param allowed_domains: The list of allowed domains, if empty list is passed all of the domains are allowed.
     :param depth: The depth the crawler should crawl to.
     :param silent: If True the crawler wont write any logs
     :param log_file: The path to the log file.
@@ -45,5 +42,5 @@ def crawl(url, domain_only, depth, silent, log_file, output_file):
         'LOG_ENABLED': not silent,
         'LOG_FILE': log_file,
     })
-    process.crawl(CookieMuncherSpider, [url], [urlparse(url).netloc] if domain_only else [])
+    process.crawl(CookieMuncherSpider, urls, allowed_domains)
     process.start()  # the script will block here until the crawling is finished
