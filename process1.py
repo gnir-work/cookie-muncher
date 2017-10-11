@@ -50,7 +50,8 @@ def create_parser():
                              "given in the argument, otherwise the output will be saved in the output folder in the "
                              "current directory")
     parser.add_argument('--delay', dest='delay', type=float, default=DEFAULT_DELAY,
-                        help="Set the delay between each request of the crawler, The input is in SECONDS. for example --delay 0.25")
+                        help="Set the delay between each request of the crawler, The input is in SECONDS. for example --delay 0.25. "
+                             "Default the delay is set to 0.")
     parser.add_argument('--user-agent', dest='user_agent', type=str, default=None,
                         help="Set hardcoded the user agent that the crawler will use, by default the crawler sets a random user agent "
                              "from a predefined list of user agents (There is no check if the user agent is valid!).")

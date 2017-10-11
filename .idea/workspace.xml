@@ -2,9 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5f914307-cba5-4552-91f7-f4a70a964cbc" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cookieMuncher/spiders/cookie_muncher.py" afterPath="$PROJECT_DIR$/cookieMuncher/spiders/cookie_muncher.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/process1.py" afterPath="$PROJECT_DIR$/process1.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -16,11 +13,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="process1.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="process1.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/process1.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-964">
-              <caret line="17" column="7" lean-forward="true" selection-start-line="17" selection-start-column="7" selection-end-line="17" selection-end-column="7" />
+            <state relative-caret-position="821">
+              <caret line="53" column="60" lean-forward="false" selection-start-line="53" selection-start-column="60" selection-end-line="53" selection-end-column="60" />
               <folding>
                 <element signature="e#98#113#0" expanded="true" />
               </folding>
@@ -50,11 +47,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="true">
+      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/.gitignore">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="17">
               <caret line="1" column="7" lean-forward="false" selection-start-line="1" selection-start-column="7" selection-end-line="1" selection-end-column="7" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="2017-10-11 19.15.04.119000 ['animetake.tv'].csv" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/output/2017-10-11 19.15.04.119000 ['animetake.tv'].csv">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="119">
+              <caret line="25" column="63" lean-forward="true" selection-start-line="25" selection-start-column="63" selection-end-line="25" selection-end-column="63" />
               <folding />
             </state>
           </provider>
@@ -89,8 +96,8 @@
         <option value="$PROJECT_DIR$/test/test1/2017-10-11 12.53.18.589000 ['animetake.tv'].csv" />
         <option value="$PROJECT_DIR$/test/test1/2017-10-11 12.53.43.204000 ['animetake.tv'].csv" />
         <option value="$PROJECT_DIR$/cookieMuncher/spiders/cookie_muncher.py" />
-        <option value="$PROJECT_DIR$/process1.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
+        <option value="$PROJECT_DIR$/process1.py" />
       </list>
     </option>
   </component>
@@ -101,10 +108,10 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="331" />
-    <option name="y" value="-10" />
-    <option name="width" value="1452" />
-    <option name="height" value="873" />
+    <option name="x" value="251" />
+    <option name="y" value="-18" />
+    <option name="width" value="1089" />
+    <option name="height" value="722" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -129,6 +136,16 @@
             <path>
               <item name="cookieMuncher" type="b2602c69:ProjectViewProjectNode" />
               <item name="cookieMuncher" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="cookieMuncher" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cookieMuncher" type="462c0819:PsiDirectoryNode" />
+              <item name="cookieMuncher" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="cookieMuncher" type="b2602c69:ProjectViewProjectNode" />
+              <item name="cookieMuncher" type="462c0819:PsiDirectoryNode" />
+              <item name="output" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -313,16 +330,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/process1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-964">
-          <caret line="17" column="7" lean-forward="true" selection-start-line="17" selection-start-column="7" selection-end-line="17" selection-end-column="7" />
-          <folding>
-            <element signature="e#98#113#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/output/2017-10-11 12.56.41.058000 ['animetake.tv'].csv">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="527">
@@ -346,6 +353,24 @@
         <state relative-caret-position="17">
           <caret line="1" column="7" lean-forward="false" selection-start-line="1" selection-start-column="7" selection-end-line="1" selection-end-column="7" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/output/2017-10-11 19.15.04.119000 ['animetake.tv'].csv">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="119">
+          <caret line="25" column="63" lean-forward="true" selection-start-line="25" selection-start-column="63" selection-end-line="25" selection-end-column="63" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/process1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="821">
+          <caret line="53" column="60" lean-forward="false" selection-start-line="53" selection-start-column="60" selection-end-line="53" selection-end-column="60" />
+          <folding>
+            <element signature="e#98#113#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
