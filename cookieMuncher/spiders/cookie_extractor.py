@@ -15,7 +15,7 @@ USER_AGENTS = [
 ]
 
 class CookieMuncherSpider(CrawlSpider):
-    name = "cookieMuncher"
+    name = "test"
     rules = (
         Rule(LinkExtractor(allow=()),
              callback="parse_item",
