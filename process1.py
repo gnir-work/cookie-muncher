@@ -7,12 +7,14 @@ from cookieMuncher.spiders.cookie_muncher import crawl
 import os
 from urlparse import urlparse
 
+from utils import check_directory_exists, OUTPUT_FIXTURE, LOG_FIXTURE
+
 DEFAULT_DEPTH = 3
 DEFAULT_LOG_FOLDER = "logs"
 DEFAULT_OUTPUT_FOLDER = "output"
-OUTPUT_FIXTURE = 'csv'
-LOG_FIXTURE = 'log'
+
 DEFAULT_DELAY = 0
+
 
 def create_parser():
     """
@@ -58,15 +60,6 @@ def create_parser():
     return parser
 
 
-def check_directory_exists(path):
-    """
-    Checks if the path exists, if it doesn't creates it.
-    :param path: The path to be checked.
-    """
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-
 def generate_file_name(folder, domains, fixture):
     """
     Creates the file name from the folder and domains that the crawler will crawl.
@@ -77,11 +70,13 @@ def generate_file_name(folder, domains, fixture):
     :return: The full path to the file.
     """
     return os.path.join(folder,
-                 "{} {}.{}".format(str(dt.now()).replace(':', '.'), generate_netlocations_from_domains(domains), fixture))
+                        "{} {}.{}".format(str(dt.now()).replace(':', '.'), generate_netlocations_from_domains(domains),
+                                          fixture))
 
 
 def generate_netlocations_from_domains(domains):
     return list({urlparse(domain).netloc for domain in domains.split()})
+
 
 def format_arguments(args):
     """
@@ -112,7 +107,8 @@ def run(parser):
     """
     args, allowed_domains = format_arguments(parser.parse_args())
     print args
-    crawl(args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.output_file, args.delay, args.user_agent)
+    crawl(args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.output_file, args.delay,
+          args.user_agent)
 
 
 if __name__ == '__main__':

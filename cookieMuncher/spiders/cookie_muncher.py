@@ -14,6 +14,7 @@ USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
 ]
 
+
 class CookieMuncherSpider(CrawlSpider):
     name = "cookieMuncher"
     rules = (
@@ -27,10 +28,12 @@ class CookieMuncherSpider(CrawlSpider):
         self.start_urls = start_urls
 
     def parse_item(self, response):
+        print '*' * 1000, response.headers.getlist('Set-Cookie')
         item = CookieMuncherItem()
         item['link'] = response.url
         item['time'] = dt.now()
         return item
+
 
 def crawl(urls, allowed_domains, depth, silent, log_file, output_file, delay, user_agent):
     """
@@ -50,7 +53,7 @@ def crawl(urls, allowed_domains, depth, silent, log_file, output_file, delay, us
         'LOG_ENABLED': not silent,
         'LOG_FILE': log_file,
         'DOWNLOAD_DELAY': delay,
-        'COOKIES_ENABLED': False
+        'COOKIES_ENABLED': True
     })
     process.crawl(CookieMuncherSpider, urls, allowed_domains)
     process.start()  # the script will block here until the crawling is finished
