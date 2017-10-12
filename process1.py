@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime as dt
 from cookieMuncher.spiders.cookie_muncher import crawl
 import os
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from utils import check_directory_exists, OUTPUT_FIXTURE, LOG_FIXTURE
 
@@ -106,7 +106,6 @@ def run(parser):
     :return: A configured crawler instance.
     """
     args, allowed_domains = format_arguments(parser.parse_args())
-    print args
     crawl(args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.output_file, args.delay,
           args.user_agent)
 

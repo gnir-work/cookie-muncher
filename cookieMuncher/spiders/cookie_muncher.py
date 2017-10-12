@@ -28,7 +28,6 @@ class CookieMuncherSpider(CrawlSpider):
         self.start_urls = start_urls
 
     def parse_item(self, response):
-        print '*' * 1000, response.headers.getlist('Set-Cookie')
         item = CookieMuncherItem()
         item['link'] = response.url
         item['time'] = dt.now()

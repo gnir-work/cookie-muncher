@@ -92,9 +92,9 @@ def read_input_file(input_file):
     :param input_file: The path to the file.
     :return: An array of [url, datetime].
     """
-    with open(args.input_file, 'rb') as urls_file:
+    with open(input_file) as urls_file:
         reader = csv.reader(urls_file)
-        rows = list(reader)[1:]
+        rows = list(reader)
         return rows
 
 
@@ -115,11 +115,15 @@ def handle_input(rows, writer, driver):
     :param writer: The csv writer.
     :param driver: The phantomJS driver for extracting the cookies.
     """
+    index = 1
+    if rows[0][0] == 'link':
+        index = 0
+    rows = rows[1:]
     done = 1
     total = len(rows)
-    print "Starting cooking extraction on {} urls...".format(total)
-    for url, _ in rows:
-        handle_url(url, writer, driver)
+    print("Starting cooking extraction on {} urls...".format(total))
+    for row in rows:
+        handle_url(row[index], writer, driver)
         loading_bar(done, total)
         done += 1
 
@@ -131,7 +135,7 @@ def run(args):
     """
     driver = webdriver.PhantomJS(executable_path='./phantomjs', service_log_path=args.log_file)
     rows = read_input_file(args.input_file)
-    with open(args.output_file, 'wb') as output:
+    with open(args.output_file, 'w') as output:
         writer = csv.writer(output)
         writer.writerow(OUTPUT_CSV_FILE_HEADERS)
         handle_input(rows, writer, driver)
