@@ -52,7 +52,7 @@ def crawl(urls, allowed_domains, depth, silent, log_file, output_file, delay, us
         'LOG_ENABLED': not silent,
         'LOG_FILE': log_file,
         'DOWNLOAD_DELAY': delay,
-        'COOKIES_ENABLED': True
+        'COOKIES_ENABLED': False
     })
     process.crawl(CookieMuncherSpider, urls, allowed_domains)
     process.start()  # the script will block here until the crawling is finished
