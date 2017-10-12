@@ -14,6 +14,7 @@ USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
 ]
 
+
 class CookieMuncherSpider(CrawlSpider):
     name = "cookieMuncher"
     rules = (
@@ -31,6 +32,7 @@ class CookieMuncherSpider(CrawlSpider):
         item['link'] = response.url
         item['time'] = dt.now()
         return item
+
 
 def crawl(urls, allowed_domains, depth, silent, log_file, output_file, delay, user_agent):
     """
