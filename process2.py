@@ -11,7 +11,13 @@ import csv
 DEFAULT_LOG_FOLDER = 'cookies_logs'
 DEFAULT_OUTPUT_FOLDER = 'cookies_output'
 OUTPUT_CSV_FILE_HEADERS = ['datetime', 'url', 'cookies']
-
+DRIVER_FOLDER = os.path.join('.', 'drivers')
+DRIVER_NAMES = {
+    'windows': 'windows_phantom.exe',
+    'linux_64': 'linux_64_phantom',
+    'linux_32': 'linux_32_phantom',
+    'mac': 'mac_phantom'
+}
 
 def create_parser():
     """
@@ -46,6 +52,9 @@ def create_parser():
                              "given in the argument, otherwise the output will be saved in "
                              "the cookies_output folder in the "
                              "current directory")
+    parser.add_argument('--os', dest='os', type=str, default='linux_64', choices=['linux_64', 'linux_32', 'mac', 'windows'],
+                        help="Choose which operation system the script will run (this is relevant for the headless browser driver). "
+                             "The default is linux 64.")
     return parser
 
 
@@ -70,12 +79,13 @@ def format_arguments(args):
     if args.output_file is None:
         args.output_file = generate_file_name(args.output_folder, args.input_file, OUTPUT_FIXTURE)
     if args.silent:
-        args.log_file = '/dev/null'
+        args.log_file = os.devnull
     elif args.log_file == '':
         args.log_file = generate_file_name(args.logs_folder, args.input_file, LOG_FIXTURE)
     check_directory_exists(args.logs_folder)
     check_directory_exists(args.output_folder)
-    return args
+    driver_path = os.path.join(DRIVER_FOLDER, DRIVER_NAMES[args.os])
+    return args, driver_path
 
 
 def handle_url(url, writer, driver):
@@ -128,12 +138,13 @@ def handle_input(rows, writer, driver):
         done += 1
 
 
-def run(args):
+def run(args, driver_path):
     """
     Read the input file given in the args and find the cookies for each url in the file.
     :param args: The args given to the process.
+    :param driver_path: The path to the driver file.
     """
-    driver = webdriver.PhantomJS(executable_path='./phantomjs', service_log_path=args.log_file)
+    driver = webdriver.PhantomJS(executable_path=driver_path, service_log_path=args.log_file)
     rows = read_input_file(args.input_file)
     with open(args.output_file, 'w') as output:
         writer = csv.writer(output)
@@ -144,5 +155,6 @@ def run(args):
 
 if __name__ == '__main__':
     parser = create_parser()
-    args = format_arguments(parser.parse_args())
-    run(args)
+    args, driver_path = format_arguments(parser.parse_args())
+    print driver_path
+    run(args, driver_path)
