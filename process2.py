@@ -106,41 +106,38 @@ def format_arguments(args):
 
 def handle_cookie(cookie, args):
     """
-    Returns information about the specific cookie as found in https://cookiepedia.co.uk
+    Returns information about the specific cookie as found in https://cookiepedia.co.uk either from cache or from
+    the scarping the site.
     :param args: The args passed to the script
     :param cookie: The json cookie retrieved using phantomJs.
     :return:about and purpose information about the cookie.
     """
-    about = None
-    purpose = None
-    if args.cache:
-        if cookie['name'] in CACHE:
-            about = CACHE[cookie['name']]['about']
-            purpose = CACHE[cookie['name']]['purpose']
-        else:
-            page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
-            soup = Soup(page_content, SOUP_PARSER)
-            if soup.find('h2').text == FOUND_COOKIE_H2:
-                about, purpose = scrap_cookie(soup)
-                CACHE[cookie['name']] = dict()
-                CACHE[cookie['name']]['about'] = about
-                CACHE[cookie['name']]['purpose'] = purpose
+
+    if args.cache and cookie['name'] in CACHE:
+        return CACHE[cookie['name']]['about'], CACHE[cookie['name']]['purpose']
     else:
-        page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
-        soup = Soup(page_content, SOUP_PARSER)
-        about, purpose = scrap_cookie(soup)
-    return about, purpose
+        return scrap_cookie(cookie['name'], cache=args.cache)
 
 
-def scrap_cookie(soup):
+def scrap_cookie(cookie_name, cache):
     """
     Scrape the https://cookiepedia.co.uk website for information on the specific cookie
-    :param soup: BeautifulSoup instance already loaded with the html of the relevant page from the site.
+    :param cookie_name: The name of the wanted cookie.
+    :param cache: Indicates if cache should be used or not.
     :return: about and purpose information for the cookie
     """
-    paragraphs = soup.find('div', attrs={'id': 'content-left'}).find_all('p')
-    about = paragraphs[0].text
-    purpose = paragraphs[1].find('strong').text
+    about = None
+    purpose = None
+    page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie_name), verify=False).content
+    soup = Soup(page_content, SOUP_PARSER)
+    if soup.find('h2').text == FOUND_COOKIE_H2:
+        paragraphs = soup.find('div', attrs={'id': 'content-left'}).find_all('p')
+        about = paragraphs[0].text
+        purpose = paragraphs[1].find('strong').text
+        if cache:
+            CACHE[cookie_name] = dict()
+            CACHE[cookie_name]['about'] = about
+            CACHE[cookie_name]['purpose'] = purpose
     return about, purpose
 
 
@@ -190,7 +187,8 @@ def handle_input(rows, writer, driver, args):
     rows = rows[1:]
     done = 1
     total = len(rows)
-    print("Starting cooking extraction on {} urls...".format(total))
+    print("Starting cookie extraction on {} urls...".format(total))
+    sys.stdout.write("\rCookie extracting: 0%")
     for row in rows:
         handle_url(row[index], writer, driver, args)
         loading_bar(done, total)
