@@ -4,17 +4,19 @@ import datetime
 import requests
 from bs4 import BeautifulSoup as Soup
 import sys
-
 from utils import OUTPUT_FIXTURE, LOG_FIXTURE, check_directory_exists
 from selenium import webdriver
 import csv
 
+# Remove annoying warning message when accessing https://cookiepedia.co.uk because of their broken
+# certificate.
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_LOG_FOLDER = 'cookies_logs'
 DEFAULT_OUTPUT_FOLDER = 'cookies_output'
-OUTPUT_CSV_FILE_HEADERS = ['datetime', 'url', 'cookies']
+OUTPUT_CSV_FILE_HEADERS = ['datetime', 'url', 'cookies', 'about', 'purpose']
 DRIVER_FOLDER = os.path.join('.', 'drivers')
 DRIVER_NAMES = {
     'windows': 'windows_phantom.exe',
@@ -25,7 +27,7 @@ DRIVER_NAMES = {
 SOUP_PARSER = 'html.parser'
 COOKIEPEDIA_PATH_FORMAT = 'https://cookiepedia.co.uk/cookies/{}'
 FOUND_COOKIE_H2 = 'About this cookie:'
-
+CACHE = dict()
 
 
 def create_parser():
@@ -61,9 +63,14 @@ def create_parser():
                              "given in the argument, otherwise the output will be saved in "
                              "the cookies_output folder in the "
                              "current directory")
-    parser.add_argument('--os', dest='os', type=str, default='linux_64', choices=['linux_64', 'linux_32', 'mac', 'windows'],
+    parser.add_argument('--os', dest='os', type=str, default='linux_64',
+                        choices=['linux_64', 'linux_32', 'mac', 'windows'],
                         help="Choose which operation system the script will run (this is relevant for the headless browser driver). "
                              "The default is linux 64.")
+    parser.add_argument('--cache', dest='cache', action='store_true',
+                        help='If this flag is present cache the cookie information found for cookies on '
+                             'https://cookiepedia.co.uk/cookies for the next the time that cookie is encountered. '
+                             "Doesn't cache cookies that weren't found on the site")
     return parser
 
 
@@ -97,30 +104,55 @@ def format_arguments(args):
     return args, driver_path
 
 
-def handle_cookie(cookie):
+def handle_cookie(cookie, args):
     """
     Returns information about the specific cookie as found in https://cookiepedia.co.uk
-    :param cookie:
-    :return:
+    :param args: The args passed to the script
+    :param cookie: The json cookie retrieved using phantomJs.
+    :return:about and purpose information about the cookie.
     """
-    page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
-    soup = Soup(page_content, SOUP_PARSER)
     about = None
     purpose = None
-    if soup.find('h2').text == FOUND_COOKIE_H2:
-        paragraphs = soup.find('div', attrs={'id': 'content-left'}).find_all('p')
-        about = paragraphs[0].text
-        purpose = paragraphs[1].find('strong').text
+    if args.cache:
+        if cookie['name'] in CACHE:
+            about = CACHE[cookie['name']]['about']
+            purpose = CACHE[cookie['name']]['purpose']
+        else:
+            page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
+            soup = Soup(page_content, SOUP_PARSER)
+            if soup.find('h2').text == FOUND_COOKIE_H2:
+                about, purpose = scrap_cookie(soup)
+                CACHE[cookie['name']] = dict()
+                CACHE[cookie['name']]['about'] = about
+                CACHE[cookie['name']]['purpose'] = purpose
+    else:
+        page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
+        soup = Soup(page_content, SOUP_PARSER)
+        about, purpose = scrap_cookie(soup)
     return about, purpose
 
-def handle_url(url, writer, driver):
+
+def scrap_cookie(soup):
+    """
+    Scrape the https://cookiepedia.co.uk website for information on the specific cookie
+    :param soup: BeautifulSoup instance already loaded with the html of the relevant page from the site.
+    :return: about and purpose information for the cookie
+    """
+    paragraphs = soup.find('div', attrs={'id': 'content-left'}).find_all('p')
+    about = paragraphs[0].text
+    purpose = paragraphs[1].find('strong').text
+    return about, purpose
+
+
+def handle_url(url, writer, driver, args):
     """
     Retrieves the cookies from the url.
     """
     driver.get(url)
     for cookie in driver.get_cookies():
-        about, purpose = handle_cookie(cookie)
+        about, purpose = handle_cookie(cookie, args)
         writer.writerow([datetime.datetime.now(), url, cookie, about, purpose])
+
 
 def read_input_file(input_file):
     """
@@ -144,9 +176,10 @@ def loading_bar(done, total):
     sys.stdout.flush()
 
 
-def handle_input(rows, writer, driver):
+def handle_input(rows, writer, driver, args):
     """
     Handle all of the rows that were retrieved from the input file.
+    :param args: The arguments passed to the script
     :param rows: The rows retrieved from the input file.
     :param writer: The csv writer.
     :param driver: The phantomJS driver for extracting the cookies.
@@ -159,7 +192,7 @@ def handle_input(rows, writer, driver):
     total = len(rows)
     print("Starting cooking extraction on {} urls...".format(total))
     for row in rows:
-        handle_url(row[index], writer, driver)
+        handle_url(row[index], writer, driver, args)
         loading_bar(done, total)
         done += 1
 
@@ -175,12 +208,11 @@ def run(args, driver_path):
     with open(args.output_file, 'w') as output:
         writer = csv.writer(output)
         writer.writerow(OUTPUT_CSV_FILE_HEADERS)
-        handle_input(rows, writer, driver)
+        handle_input(rows, writer, driver, args)
     driver.quit()
 
 
 if __name__ == '__main__':
     parser = create_parser()
     args, driver_path = format_arguments(parser.parse_args())
-    print driver_path
     run(args, driver_path)
