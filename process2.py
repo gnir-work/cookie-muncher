@@ -1,12 +1,16 @@
 import argparse
 import os
 import datetime
-
+import requests
+from bs4 import BeautifulSoup as Soup
 import sys
 
 from utils import OUTPUT_FIXTURE, LOG_FIXTURE, check_directory_exists
 from selenium import webdriver
 import csv
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DEFAULT_LOG_FOLDER = 'cookies_logs'
 DEFAULT_OUTPUT_FOLDER = 'cookies_output'
@@ -18,6 +22,11 @@ DRIVER_NAMES = {
     'linux_32': 'linux_32_phantom',
     'mac': 'mac_phantom'
 }
+SOUP_PARSER = 'html.parser'
+COOKIEPEDIA_PATH_FORMAT = 'https://cookiepedia.co.uk/cookies/{}'
+FOUND_COOKIE_H2 = 'About this cookie:'
+
+
 
 def create_parser():
     """
@@ -88,13 +97,30 @@ def format_arguments(args):
     return args, driver_path
 
 
+def handle_cookie(cookie):
+    """
+    Returns information about the specific cookie as found in https://cookiepedia.co.uk
+    :param cookie:
+    :return:
+    """
+    page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
+    soup = Soup(page_content, SOUP_PARSER)
+    about = None
+    purpose = None
+    if soup.find('h2').text == FOUND_COOKIE_H2:
+        paragraphs = soup.find('div', attrs={'id': 'content-left'}).find_all('p')
+        about = paragraphs[0].text
+        purpose = paragraphs[1].find('strong').text
+    return about, purpose
+
 def handle_url(url, writer, driver):
     """
     Retrieves the cookies from the url.
     """
     driver.get(url)
-    writer.writerow([datetime.datetime.now(), url, driver.get_cookies()])
-
+    for cookie in driver.get_cookies():
+        about, purpose = handle_cookie(cookie)
+        writer.writerow([datetime.datetime.now(), url, cookie, about, purpose])
 
 def read_input_file(input_file):
     """
