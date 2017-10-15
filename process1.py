@@ -87,8 +87,7 @@ def format_arguments(args):
     allowed_domains = []
     if args.domain_only:
         allowed_domains = generate_netlocations_from_domains(args.domains)
-    if args.output_file is None:
-        args.output_file = generate_file_name(args.output_folder, args.domains, OUTPUT_FIXTURE)
+    args.output_file = args.output_file or generate_file_name(args.output_folder, args.domains, OUTPUT_FIXTURE)
     if args.silent:
         args.log_file = None
     if args.log_file == '':
