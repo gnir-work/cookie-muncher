@@ -1,21 +1,40 @@
-from db import session, MuncherSchedule, MuncherConfig
+import datetime
+
+from db import MuncherSchedule, MuncherConfig, engine
+from sqlalchemy.orm import Session
 import json
+
+DEFAULT_DEPTH = 1
+DEFAULT_LOG_FOLDER = "logs"
+DEFAULT_OUTPUT_FOLDER = "output"
+
+DEFAULT_DELAY = 0
 
 PARAMS = {
     "domain_only": False,
-    "depth": 3,
+    "depth": DEFAULT_DEPTH,
     "domains": "https://animetake.tv",
     "silent": True,
     "log_file": '',
     "output_file": '',
-    "logs_folder": 'logs',
-    "output_folder": 'output',
+    "logs_folder": DEFAULT_LOG_FOLDER,
+    "user_agent": None,
+    "delay": DEFAULT_DELAY
 }
 
-if __name__ == '__main__':
-    print(len(json.dumps(PARAMS)))
-    config = MuncherConfig(json_params=json.dumps(PARAMS))
-    session.add(config)
+
+def create_config(session, params=PARAMS):
+    session.add(MuncherConfig(json_params=json.dumps(params)))
     session.commit()
-    print(config.id)
-    print('done')
+
+
+def create_schedule(session, user_id, config_id):
+    schedule = MuncherSchedule(user_id=user_id, config_id=config_id, start_datetime=datetime.datetime.now())
+    session.add(schedule)
+    session.commit()
+
+
+if __name__ == '__main__':
+    session = Session(engine)
+    # create_config(session)
+    create_schedule(session,2, 5)

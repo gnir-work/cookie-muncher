@@ -1,9 +1,13 @@
+import sys
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scrapy.crawler import CrawlerProcess
 from datetime import datetime as dt
 import random
+
+
 from cookieMuncher.items import CookieMuncherItem
+from cookieMuncher.pipelines import CookiemuncherPipeline
 
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
@@ -34,7 +38,7 @@ class CookieMuncherSpider(CrawlSpider):
         return item
 
 
-def crawl(urls, allowed_domains, depth, silent, log_file, output_file, delay, user_agent):
+def crawl(schedule_id, urls, allowed_domains, depth, silent, log_file, delay, user_agent):
     """
     Start crawling with CookieMuncher spider.
     :param urls: The list of urls from which the crawlers should start crawling
@@ -42,17 +46,18 @@ def crawl(urls, allowed_domains, depth, silent, log_file, output_file, delay, us
     :param depth: The depth the crawler should crawl to.
     :param silent: If True the crawler wont write any logs
     :param log_file: The path to the log file.
-    :param output_file: The path to the output of the crawler.
     """
     process = CrawlerProcess({
         'USER_AGENT': user_agent if user_agent else random.choice(USER_AGENTS),
         'DEPTH_LIMIT': depth,
-        'FEED_URI': output_file,
-        'FEED_FORMAT': 'csv',
         'LOG_ENABLED': not silent,
         'LOG_FILE': log_file,
         'DOWNLOAD_DELAY': delay,
-        'COOKIES_ENABLED': False
+        'COOKIES_ENABLED': False,
+        'ITEM_PIPELINES': {
+            'cookieMuncher.pipelines.CookiemuncherPipeline': 300
+        },
+        'schedule_id': schedule_id
     })
     process.crawl(CookieMuncherSpider, urls, allowed_domains)
     process.start()  # the script will block here until the crawling is finished

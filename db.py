@@ -1,6 +1,5 @@
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 
 DB_URL = URL(drivername='mysql+pymysql', username='nir', password='geller', host='localhost',
@@ -23,5 +22,5 @@ MuncherSchedule = Base.classes.tblMuncher_Schedule
 MuncherStats = Base.classes.tbl_Muncher_Stats
 UrlScans = Base.classes.tblUrl_Scans
 
-session = Session(engine)
+
 
