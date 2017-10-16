@@ -1,12 +1,18 @@
 import argparse
+import json
 import os
 import datetime
 import requests
 from bs4 import BeautifulSoup as Soup
 import sys
-from utils import OUTPUT_FIXTURE, LOG_FIXTURE, check_directory_exists
+
+from dotmap import DotMap
+from sqlalchemy import exists
+from sqlalchemy.orm import Session
+
+from db import engine, MuncherSchedule, MuncherConfig, UrlScans, Cookies, ExtractedCookies
+from utils import LOG_FIXTURE, check_directory_exists
 from selenium import webdriver
-import csv
 
 # Remove annoying warning message when accessing https://cookiepedia.co.uk because of their broken
 # certificate.
@@ -29,6 +35,8 @@ COOKIEPEDIA_PATH_FORMAT = 'https://cookiepedia.co.uk/cookies/{}'
 FOUND_COOKIE_H2 = 'About this cookie:'
 CACHE = dict()
 
+session = Session(engine)
+
 
 def create_parser():
     """
@@ -36,41 +44,13 @@ def create_parser():
     :return: The configured parser instance.
     """
     parser = argparse.ArgumentParser(description="A Cookie collection tool. ")
-    parser.add_argument('-i', '--input-file', dest='input_file', required=True,
-                        help="The path to the file that contains the output of process1.py script.")
-    parser.add_argument('-s', '--silent', dest='silent',
-                        help='Will not log the cookie gathering process if the flag is present.',
-                        action='store_true')
-    parser.add_argument('--log-file', dest='log_file', type=str, default='', nargs='?', const='',
-                        help="The folder to which the logs will be saved to, if the flag isn't"
-                             " or empty present but empty "
-                             "the logs will be saved to a file with the following name: cookies_[input file].log. "
-                        )
-    parser.add_argument('--output-file', dest='output_file', type=str, default=None,
-                        help="If the flag is present than the output of the cookie"
-                             " gathering will be written to the filename "
-                             "given in the path, otherwise the output will"
-                             " be written to a file with the following name "
-                             "cookies_[input_file].csv")
-    parser.add_argument('--logs-folder', dest='logs_folder', type=str, default=DEFAULT_LOG_FOLDER,
-                        help="If the flag is present than the logs from the cookie gathering will be saved in the path "
-                             "given in the argument, otherwise the logs will be saved in "
-                             "the cookies_logs folder in the "
-                             "current directory")
-    parser.add_argument('--output-folder', dest='output_folder', type=str, default=DEFAULT_OUTPUT_FOLDER,
-                        help="If the flag is present than the output from the cookie "
-                             "gathering will be saved in the path "
-                             "given in the argument, otherwise the output will be saved in "
-                             "the cookies_output folder in the "
-                             "current directory")
+    parser.add_argument('-i', '--id', dest='id', required=True, type=int,
+                        help="The id of the MuncherSchedule.")
     parser.add_argument('--os', dest='os', type=str, default='linux_64',
                         choices=['linux_64', 'linux_32', 'mac', 'windows'],
-                        help="Choose which operation system the script will run (this is relevant for the headless browser driver). "
-                             "The default is linux 64.")
-    parser.add_argument('--cache', dest='cache', action='store_true',
-                        help='If this flag is present cache the cookie information found for cookies on '
-                             'https://cookiepedia.co.uk/cookies for the next the time that cookie is encountered. '
-                             "Doesn't cache cookies that weren't found on the site")
+                        help="Choose which operation system the script will run "
+                             "(this is relevant for the headless browser driver).")
+
     return parser
 
 
@@ -86,81 +66,72 @@ def generate_file_name(folder, input_file, extension):
     return os.path.join(folder, "cookies_{}.{}".format(os.path.splitext(os.path.basename(input_file))[0], extension))
 
 
-def format_arguments(args):
+def format_arguments(args, os_system):
     """
     Formats the arguments given to the script.
     :param args: The args given to the script.
     :return: The formatted args.
     """
-    if args.output_file is None:
-        args.output_file = generate_file_name(args.output_folder, args.input_file, OUTPUT_FIXTURE)
     if args.silent:
         args.log_file = os.devnull
     elif args.log_file == '':
         args.log_file = generate_file_name(args.logs_folder, args.input_file, LOG_FIXTURE)
     check_directory_exists(args.logs_folder)
-    check_directory_exists(args.output_folder)
-    driver_path = os.path.join(DRIVER_FOLDER, DRIVER_NAMES[args.os])
+    driver_path = os.path.join(DRIVER_FOLDER, DRIVER_NAMES[os_system])
     return args, driver_path
 
 
-def handle_cookie(cookie, args):
-    """
-    Returns information about the specific cookie as found in https://cookiepedia.co.uk either from cache or from
-    the scarping the site.
-    :param args: The args passed to the script
-    :param cookie: The json cookie retrieved using phantomJs.
-    :return:about and purpose information about the cookie.
-    """
-
-    if args.cache and cookie['name'] in CACHE:
-        return CACHE[cookie['name']]['about'], CACHE[cookie['name']]['purpose']
-    else:
-        return scrap_cookie(cookie['name'], cache=args.cache)
-
-
-def scrap_cookie(cookie_name, cache):
+def scrap_cookie(cookie, url):
     """
     Scrape the https://cookiepedia.co.uk website for information on the specific cookie
-    :param cookie_name: The name of the wanted cookie.
-    :param cache: Indicates if cache should be used or not.
-    :return: about and purpose information for the cookie
+    :param cookie: The json cookie retrieved using phantomJs.
+    :param url: The url from which the cookie was loaded.
+    :return: The id of the item created in the db for the cookie.
     """
     about = None
     purpose = None
-    page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie_name), verify=False).content
+    page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
     soup = Soup(page_content, SOUP_PARSER)
     if soup.find('h2').text == FOUND_COOKIE_H2:
         paragraphs = soup.find('div', attrs={'id': 'content-left'}).find_all('p')
         about = paragraphs[0].text
         purpose = paragraphs[1].find('strong').text
-        if cache:
-            CACHE[cookie_name] = dict()
-            CACHE[cookie_name]['about'] = about
-            CACHE[cookie_name]['purpose'] = purpose
-    return about, purpose
+        Cookie = Cookies(cookie_source=1, cookie_name=cookie['name'], cookie_attr=json.dumps(cookie),
+                         datetime=datetime.datetime.now())
+        session.add(Cookie)
+        return Cookie.id
+    else:
+        return -1
 
 
-def handle_url(url, writer, driver, args):
+def handle_cookie(cookie, url):
+    """
+    Returns information about the specific cookie as found in https://cookiepedia.co.uk either from cache or from
+    the scarping the site.
+    :param UrlScans url: The url item in the db.
+    :param cookie: The json cookie retrieved using phantomJs.
+    :return:about and purpose information about the cookie.
+    """
+    if session.query(exists().where(Cookies.cookie_name == cookie['name'])).scalar():
+        return session.query(Cookies).filter(Cookies.cookie_name == cookie['name'])
+    else:
+        return scrap_cookie(cookie, url.url)
+
+
+def handle_url(url, schedule_id, driver):
     """
     Retrieves the cookies from the url.
+    :param UrlScans url: The url item in the db.
+    :param schedule_id: The id of the schedule.
+    :param driver: The headless browser driver
+    :return:
     """
-    driver.get(url)
+    driver.get(url.url)
     for cookie in driver.get_cookies():
-        about, purpose = handle_cookie(cookie, args)
-        writer.writerow([datetime.datetime.now(), url, cookie, about, purpose])
-
-
-def read_input_file(input_file):
-    """
-    Read the input file and extract the rows in the files
-    :param input_file: The path to the file.
-    :return: An array of [url, datetime].
-    """
-    with open(input_file) as urls_file:
-        reader = csv.reader(urls_file)
-        rows = list(reader)
-        return rows
+        cookie_id = handle_cookie(cookie, url.url)
+        print(url.id, cookie_id)
+        # session.add(ExtractedCookies(url_id=url.id, cookie_id=cookie_id))
+        break
 
 
 def loading_bar(done, total):
@@ -173,44 +144,48 @@ def loading_bar(done, total):
     sys.stdout.flush()
 
 
-def handle_input(rows, writer, driver, args):
+def handle_input(rows, schedule_id, driver):
     """
-    Handle all of the rows that were retrieved from the input file.
-    :param args: The arguments passed to the script
-    :param rows: The rows retrieved from the input file.
-    :param writer: The csv writer.
+    Handle all of the rows that were retrieved from the db.
+    :param rows: The rows retrieved from the db.
+    :param schedule_id: the id of the scheduled task.
     :param driver: The phantomJS driver for extracting the cookies.
+
     """
-    index = 1
-    if rows[0][0] == 'link':
-        index = 0
-    rows = rows[1:]
     done = 1
     total = len(rows)
     print("Starting cookie extraction on {} urls...".format(total))
     sys.stdout.write("\rCookie extracting: 0%")
     for row in rows:
-        handle_url(row[index], writer, driver, args)
+        handle_url(row, schedule_id, driver)
         loading_bar(done, total)
         done += 1
+        break
 
 
-def run(args, driver_path):
+def run(schedule_id, args, driver_path):
     """
-    Read the input file given in the args and find the cookies for each url in the file.
-    :param args: The args given to the process.
-    :param driver_path: The path to the driver file.
+    Read the urls from the urls table with the given schedule id and find the cookies for each url .
+    :param schedule_id: The scheduled task id.
+    :param args: The args from the config table.
+    :param driver_path: the path to the driver.
     """
+    args.log_file = 'a.log'
     driver = webdriver.PhantomJS(executable_path=driver_path, service_log_path=args.log_file)
-    rows = read_input_file(args.input_file)
-    with open(args.output_file, 'w') as output:
-        writer = csv.writer(output)
-        writer.writerow(OUTPUT_CSV_FILE_HEADERS)
-        handle_input(rows, writer, driver, args)
+    rows = session.query(UrlScans).filter(UrlScans.schedule_id == schedule_id).all()
+    handle_input(rows, schedule_id, driver)
+    session.commit()
     driver.quit()
 
 
-if __name__ == '__main__':
+def main():
     parser = create_parser()
-    args, driver_path = format_arguments(parser.parse_args())
-    run(args, driver_path)
+    parser_args = parser.parse_args()
+    schedule = session.query(MuncherSchedule).get(parser_args.id)
+    config = session.query(MuncherConfig).get(schedule.config_id)
+    args, driver_path = format_arguments(DotMap(json.loads(config.json_params)), parser_args.os)
+    run(parser_args.id, args, driver_path)
+
+
+if __name__ == '__main__':
+    main()

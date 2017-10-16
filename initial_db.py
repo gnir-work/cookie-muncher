@@ -16,7 +16,6 @@ PARAMS = {
     "domains": "https://animetake.tv",
     "silent": True,
     "log_file": '',
-    "output_file": '',
     "logs_folder": DEFAULT_LOG_FOLDER,
     "user_agent": None,
     "delay": DEFAULT_DELAY
