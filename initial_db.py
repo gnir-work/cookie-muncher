@@ -35,5 +35,5 @@ def create_schedule(session, user_id, config_id):
 
 if __name__ == '__main__':
     session = Session(engine)
-    # create_config(session)
-    create_schedule(session,2, 5)
+    create_config(session)
+    create_schedule(session,2, 1)

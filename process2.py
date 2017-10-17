@@ -10,7 +10,7 @@ from dotmap import DotMap
 from sqlalchemy import exists
 from sqlalchemy.orm import Session
 
-from db import engine, MuncherSchedule, MuncherConfig, UrlScans, Cookies, ExtractedCookies
+from db import engine, MuncherSchedule, MuncherConfig, UrlScans, Cookies, ExtractedCookies, CookieInfo, MuncherStats
 from utils import LOG_FIXTURE, check_directory_exists
 from selenium import webdriver
 
@@ -96,12 +96,11 @@ def scrap_cookie(cookie, url):
         paragraphs = soup.find('div', attrs={'id': 'content-left'}).find_all('p')
         about = paragraphs[0].text
         purpose = paragraphs[1].find('strong').text
-        Cookie = Cookies(cookie_source=1, cookie_name=cookie['name'], cookie_attr=json.dumps(cookie),
-                         datetime=datetime.datetime.now())
-        session.add(Cookie)
-        return Cookie.id
-    else:
-        return -1
+    info = CookieInfo(cookie_name=cookie['name'], purpose=purpose, about=about,
+                      datetime=datetime.datetime.now())
+    session.add(info)
+    session.commit()
+    return info.id
 
 
 def handle_cookie(cookie, url):
@@ -112,26 +111,30 @@ def handle_cookie(cookie, url):
     :param cookie: The json cookie retrieved using phantomJs.
     :return:about and purpose information about the cookie.
     """
-    if session.query(exists().where(Cookies.cookie_name == cookie['name'])).scalar():
-        return session.query(Cookies).filter(Cookies.cookie_name == cookie['name'])
+    if session.query(exists().where(CookieInfo.cookie_name == cookie['name'])).scalar():
+        cookie_info_id = session.query(CookieInfo).filter(CookieInfo.cookie_name == cookie['name']).scalar().id
     else:
-        return scrap_cookie(cookie, url.url)
+        cookie_info_id = scrap_cookie(cookie, url)
+    cookie_midal = Cookies(cookie_info_id=cookie_info_id, cookie_source=0, cookie_attr=json.dumps(cookie),
+                     datetime=datetime.datetime.now())
+    session.add(cookie_midal)
+    session.commit()
+    return cookie_midal.id
 
 
-def handle_url(url, schedule_id, driver):
+def handle_url(url, driver):
     """
     Retrieves the cookies from the url.
     :param UrlScans url: The url item in the db.
-    :param schedule_id: The id of the schedule.
     :param driver: The headless browser driver
     :return:
     """
+    print("getting url")
     driver.get(url.url)
+    print("done")
     for cookie in driver.get_cookies():
         cookie_id = handle_cookie(cookie, url.url)
-        print(url.id, cookie_id)
-        # session.add(ExtractedCookies(url_id=url.id, cookie_id=cookie_id))
-        break
+        session.add(ExtractedCookies(url_id=url.id, cookie_id=cookie_id))
 
 
 def loading_bar(done, total):
@@ -148,7 +151,7 @@ def handle_input(rows, schedule_id, driver):
     """
     Handle all of the rows that were retrieved from the db.
     :param rows: The rows retrieved from the db.
-    :param schedule_id: the id of the scheduled task.
+    :param schedule_id: the id of the scheduled tastblCookie_Infok.
     :param driver: The phantomJS driver for extracting the cookies.
 
     """
@@ -157,10 +160,9 @@ def handle_input(rows, schedule_id, driver):
     print("Starting cookie extraction on {} urls...".format(total))
     sys.stdout.write("\rCookie extracting: 0%")
     for row in rows:
-        handle_url(row, schedule_id, driver)
+        handle_url(row, driver)
         loading_bar(done, total)
         done += 1
-        break
 
 
 def run(schedule_id, args, driver_path):
@@ -180,11 +182,11 @@ def run(schedule_id, args, driver_path):
 
 def main():
     parser = create_parser()
-    parser_args = parser.parse_args()
-    schedule = session.query(MuncherSchedule).get(parser_args.id)
+    # parser_args = parser.parse_args()
+    schedule = session.query(MuncherSchedule).get(1)
     config = session.query(MuncherConfig).get(schedule.config_id)
-    args, driver_path = format_arguments(DotMap(json.loads(config.json_params)), parser_args.os)
-    run(parser_args.id, args, driver_path)
+    args, driver_path = format_arguments(DotMap(json.loads(config.json_params)), 'linux_64')
+    run(1, args, driver_path)
 
 
 if __name__ == '__main__':
