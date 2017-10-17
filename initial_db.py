@@ -11,11 +11,11 @@ DEFAULT_OUTPUT_FOLDER = "output"
 DEFAULT_DELAY = 0
 
 PARAMS = {
-    "domain_only": False,
+    "domain_only": True,
     "depth": DEFAULT_DEPTH,
-    "domains": "https://animetake.tv",
-    "silent": True,
-    "log_file": '',
+    "domains": "https://google.com",
+    "silent": False,
+    "log_file": None,
     "logs_folder": DEFAULT_LOG_FOLDER,
     "user_agent": None,
     "delay": DEFAULT_DELAY
@@ -36,4 +36,4 @@ def create_schedule(session, user_id, config_id):
 if __name__ == '__main__':
     session = Session(engine)
     create_config(session)
-    create_schedule(session,2, 1)
+    create_schedule(session, 2, 1)

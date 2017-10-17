@@ -1,4 +1,6 @@
 import sys
+from urlparse import urlparse
+
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scrapy.crawler import CrawlerProcess
@@ -32,18 +34,24 @@ class CookieMuncherSpider(CrawlSpider):
         super(CookieMuncherSpider, self).__init__(*args, **kwargs)
         self.allowed_domains = allowed_domains
         self.start_urls = start_urls
-        self.crawled_urls = 0
+        self.start_domains = [urlparse(url).netloc for url in start_urls]
+        self.crawled_internal_urls = 0
+        self.crawled_external_urls = 0
         self.session = Session(engine)
         self.stats = self.session.query(MuncherStats).filter(MuncherStats.schedule_id == schedule_id).scalar()
 
     def close(spider, reason):
-        spider.stats.urls_scanned_fp = spider.crawled_urls
+        spider.stats.urls_scanned_fp = spider.crawled_internal_urls
+        spider.stats.urls_scanned_tp = spider.crawled_external_urls
         spider.stats.url_last_result = reason
         spider.session.commit()
         spider.session.close()
 
     def parse_item(self, response):
-        self.crawled_urls += 1
+        if any([domain in response.url for domain in self.start_domains]):
+            self.crawled_internal_urls += 1
+        else:
+            self.crawled_external_urls += 1
         item = CookieMuncherItem()
         item['link'] = response.url
         item['time'] = dt.now()

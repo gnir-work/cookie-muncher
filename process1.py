@@ -2,16 +2,19 @@
 A basic scrapper which receives a domain name and returns all of the links in the domain.
 """
 import argparse
-from datetime import datetime as dt
+from datetime import datetime as dt, datetime
 
 from sqlalchemy.orm import Session
 
 from dotmap import DotMap
+from sqlalchemy import exists
+
 from cookieMuncher.spiders.cookie_muncher import crawl
 import os
 import json
-from urllib.parse import urlparse
-from db import engine, MuncherConfig, MuncherSchedule
+# from urllib.parse import urlparse
+from urlparse import urlparse
+from db import engine, MuncherConfig, MuncherSchedule, MuncherStats
 from utils import check_directory_exists, LOG_FIXTURE
 
 
@@ -61,20 +64,41 @@ def format_arguments(args):
     return args, allowed_domains
 
 
+def create_muncher_stats(session, schedule_id):
+    """
+    Creates the stats table for this schedule, if a table already exists for this schedule aborts the run.
+    :param Session session: The session with the mysql db.
+    :param schedule_id: The schedule id for this run.
+    :return: True if the stats was created successfully false otherwise.
+    """
+    if session.query(exists().where(MuncherStats.schedule_id == schedule_id)).scalar():
+        print("There is already a muncher stats with the schedule id of {}".format(schedule_id))
+        return None
+    else:
+        stats = MuncherStats(schedule_id=schedule_id)
+        session.add(stats)
+        session.commit()
+        return stats
+
 def run(parser):
     """
     Creates the crawler using the parser to parse the cli arguments.
     :param parser: A configured instance of argsParser
     :return: A configured crawler instance.
     """
+    start = datetime.now()
     session = Session(engine)
     id = parser.parse_args().id
+    # id = 3
     schedule = session.query(MuncherSchedule).get(id)
     config = session.query(MuncherConfig).get(schedule.config_id)
-    args, allowed_domains = format_arguments(DotMap(json.loads(config.json_params)))
-    crawl(id, args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.delay, args.user_agent)
-
-
+    stats = create_muncher_stats(session, id)
+    if stats:
+        args, allowed_domains = format_arguments(DotMap(json.loads(config.json_params)))
+        crawl(id, args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.delay, args.user_agent)
+        stats.url_scan_duration =(datetime.now() - start).seconds
+        session.commit()
+    session.close()
 if __name__ == '__main__':
     parser = create_parser()
     run(parser)
