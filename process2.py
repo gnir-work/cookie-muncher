@@ -116,7 +116,7 @@ def handle_cookie(cookie, url):
     else:
         cookie_info_id = scrap_cookie(cookie, url)
     cookie_midal = Cookies(cookie_info_id=cookie_info_id, cookie_source=0, cookie_attr=json.dumps(cookie),
-                     datetime=datetime.datetime.now())
+                           datetime=datetime.datetime.now())
     session.add(cookie_midal)
     session.commit()
     return cookie_midal.id
@@ -175,8 +175,14 @@ def run(schedule_id, args, driver_path):
     args.log_file = 'a.log'
     driver = webdriver.PhantomJS(executable_path=driver_path, service_log_path=args.log_file)
     rows = session.query(UrlScans).filter(UrlScans.schedule_id == schedule_id).all()
+    stats = session.query(CookieInfo).filter(MuncherStats.schedule_id == schedule_id).scalar()
+    if not stats:
+        with open(args.log_file, 'w') as log:
+            log.write("ERROR: No muncher stats was created!! check if you ran process1.py, if you did check logs for "
+                      "run with schedule id: {}".format(schedule_id))
     handle_input(rows, schedule_id, driver)
     session.commit()
+    session.close()
     driver.quit()
 
 

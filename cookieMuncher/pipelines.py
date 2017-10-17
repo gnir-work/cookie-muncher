@@ -19,3 +19,7 @@ class CookiemuncherPipeline(object):
         self.session.add(UrlScans(schedule_id=spider.settings.get(SCHEDULE_ID), url=item['link']))
         self.session.commit()
         return item
+
+    def close_spider(self, spider):
+        print('Closed session with mysql from pipeline')
+        self.session.close()

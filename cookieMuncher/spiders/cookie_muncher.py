@@ -5,9 +5,11 @@ from scrapy.crawler import CrawlerProcess
 from datetime import datetime as dt
 import random
 
+from sqlalchemy.orm import Session
 
 from cookieMuncher.items import CookieMuncherItem
 from cookieMuncher.pipelines import CookiemuncherPipeline
+from db import engine, MuncherStats
 
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
@@ -26,12 +28,22 @@ class CookieMuncherSpider(CrawlSpider):
              callback="parse_item",
              follow=True),)
 
-    def __init__(self, start_urls, allowed_domains, *args, **kwargs):
+    def __init__(self, start_urls, allowed_domains, schedule_id, *args, **kwargs):
         super(CookieMuncherSpider, self).__init__(*args, **kwargs)
         self.allowed_domains = allowed_domains
         self.start_urls = start_urls
+        self.crawled_urls = 0
+        self.session = Session(engine)
+        self.stats = self.session.query(MuncherStats).filter(MuncherStats.schedule_id == schedule_id).scalar()
+
+    def close(spider, reason):
+        spider.stats.urls_scanned_fp = spider.crawled_urls
+        spider.stats.url_last_result = reason
+        spider.session.commit()
+        spider.session.close()
 
     def parse_item(self, response):
+        self.crawled_urls += 1
         item = CookieMuncherItem()
         item['link'] = response.url
         item['time'] = dt.now()
@@ -59,5 +71,5 @@ def crawl(schedule_id, urls, allowed_domains, depth, silent, log_file, delay, us
         },
         'schedule_id': schedule_id
     })
-    process.crawl(CookieMuncherSpider, urls, allowed_domains)
+    process.crawl(CookieMuncherSpider, urls, allowed_domains, schedule_id)
     process.start()  # the script will block here until the crawling is finished
