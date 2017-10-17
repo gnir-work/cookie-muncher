@@ -4,7 +4,7 @@ from db import MuncherSchedule, MuncherConfig, engine
 from sqlalchemy.orm import Session
 import json
 
-DEFAULT_DEPTH = 1
+DEFAULT_DEPTH = 2
 DEFAULT_LOG_FOLDER = "logs"
 DEFAULT_OUTPUT_FOLDER = "output"
 
@@ -13,7 +13,7 @@ DEFAULT_DELAY = 0
 PARAMS = {
     "domain_only": True,
     "depth": DEFAULT_DEPTH,
-    "domains": "https://google.com",
+    "domains": "https://animetake.tv/",
     "silent": False,
     "log_file": None,
     "logs_folder": DEFAULT_LOG_FOLDER,
@@ -36,5 +36,5 @@ def create_schedule(session, user_id, config_id):
 if __name__ == '__main__':
     session = Session(engine)
     create_config(session)
-    create_schedule(session, 2, 1)
+    create_schedule(session, 2, 4)
     session.close()

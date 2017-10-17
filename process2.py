@@ -181,12 +181,11 @@ def get_stats(schedule_id):
 
 def main():
     parser = create_parser()
-    # parser_args = parser.parse_args()
-    schedule_id = 3
-    schedule = session.query(MuncherSchedule).get(schedule_id)
+    parser_args = parser.parse_args()
+    schedule = session.query(MuncherSchedule).get(parser_args.id)
     config = session.query(MuncherConfig).get(schedule.config_id)
-    stats = get_stats(schedule_id)
-    args, driver_path = format_arguments(DotMap(json.loads(config.json_params)), 'windows', schedule_id)
+    stats = get_stats(parser_args.id)
+    args, driver_path = format_arguments(DotMap(json.loads(config.json_params)), parser_args.os, parser_args.id)
     try:
         start = datetime.datetime.now()
         run(stats, args, driver_path)
@@ -195,7 +194,7 @@ def main():
         session.commit()
         session.close()
     except Exception as e:
-        logging.error(e.message)
+        logging.error(e)
         stats.cookie_last_result = 'aborted'
         session.commit()
         session.close()
