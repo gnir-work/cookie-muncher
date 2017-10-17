@@ -10,7 +10,6 @@ from db import engine, UrlScans
 
 SCHEDULE_ID = 'schedule_id'
 
-
 class CookiemuncherPipeline(object):
     def __init__(self):
         self.session = Session(engine)
@@ -21,5 +20,4 @@ class CookiemuncherPipeline(object):
         return item
 
     def close_spider(self, spider):
-        print('Closed session with mysql from pipeline')
         self.session.close()

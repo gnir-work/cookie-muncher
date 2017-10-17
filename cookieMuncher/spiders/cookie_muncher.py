@@ -1,5 +1,4 @@
-import sys
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
@@ -10,7 +9,6 @@ import random
 from sqlalchemy.orm import Session
 
 from cookieMuncher.items import CookieMuncherItem
-from cookieMuncher.pipelines import CookiemuncherPipeline
 from db import engine, MuncherStats
 
 USER_AGENTS = [

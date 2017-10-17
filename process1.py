@@ -12,8 +12,7 @@ from sqlalchemy import exists
 from cookieMuncher.spiders.cookie_muncher import crawl
 import os
 import json
-# from urllib.parse import urlparse
-from urlparse import urlparse
+from urllib.parse import urlparse
 from db import engine, MuncherConfig, MuncherSchedule, MuncherStats
 from utils import check_directory_exists, LOG_FIXTURE
 
@@ -28,7 +27,7 @@ def create_parser():
     return parser
 
 
-def generate_file_name(folder, domains, fixture):
+def generate_file_name(folder, schedule_id, fixture):
     """
     Creates the file name from the folder and domains that the crawler will crawl.
     the file name will be: [datetime] [net locations of domains given].[fixture]
@@ -38,15 +37,15 @@ def generate_file_name(folder, domains, fixture):
     :return: The full path to the file.
     """
     return os.path.join(folder,
-                        "{} {}.{}".format(str(dt.now()).replace(':', '.'), generate_netlocations_from_domains(domains),
-                                          fixture))
+                        "urls_scan_schedule_{}_{}.{}".format(schedule_id, str(dt.now()).replace(':', '.'),
+                                                             fixture))
 
 
 def generate_netlocations_from_domains(domains):
     return list({urlparse(domain).netloc for domain in domains.split()})
 
 
-def format_arguments(args):
+def format_arguments(args, schedule_id):
     """
     Formats the arguments given to the script.
     :param args: The args given to the script.
@@ -57,8 +56,8 @@ def format_arguments(args):
         allowed_domains = generate_netlocations_from_domains(args.domains)
     if args.silent:
         args.log_file = None
-    if args.log_file == '':
-        args.log_file = generate_file_name(args.logs_folder, args.domains, LOG_FIXTURE)
+    else:
+        args.log_file = generate_file_name(args.logs_folder, schedule_id, LOG_FIXTURE)
     args.domains = args.domains.split()
     check_directory_exists(args.logs_folder)
     return args, allowed_domains
@@ -80,6 +79,7 @@ def create_muncher_stats(session, schedule_id):
         session.commit()
         return stats
 
+
 def run(parser):
     """
     Creates the crawler using the parser to parse the cli arguments.
@@ -89,16 +89,19 @@ def run(parser):
     start = datetime.now()
     session = Session(engine)
     id = parser.parse_args().id
-    # id = 3
     schedule = session.query(MuncherSchedule).get(id)
     config = session.query(MuncherConfig).get(schedule.config_id)
     stats = create_muncher_stats(session, id)
     if stats:
-        args, allowed_domains = format_arguments(DotMap(json.loads(config.json_params)))
+        args, allowed_domains = format_arguments(DotMap(json.loads(config.json_params)), id)
+        stats.urls_log_path = args.log_file
+        session.commit()
         crawl(id, args.domains, allowed_domains, args.depth, args.silent, args.log_file, args.delay, args.user_agent)
-        stats.url_scan_duration =(datetime.now() - start).seconds
+        stats.url_scan_duration = (datetime.now() - start).seconds
         session.commit()
     session.close()
+
+
 if __name__ == '__main__':
     parser = create_parser()
     run(parser)

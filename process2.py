@@ -4,12 +4,12 @@ import os
 import datetime
 import requests
 from bs4 import BeautifulSoup as Soup
-import sys
-
+import logging
 from dotmap import DotMap
 from sqlalchemy import exists
 from sqlalchemy.orm import Session
 
+from progress.bar import Bar
 from db import engine, MuncherSchedule, MuncherConfig, UrlScans, Cookies, ExtractedCookies, CookieInfo, MuncherStats
 from utils import LOG_FIXTURE, check_directory_exists
 from selenium import webdriver
@@ -54,19 +54,21 @@ def create_parser():
     return parser
 
 
-def generate_file_name(folder, input_file, extension):
+def generate_file_name(folder, schedule_id, extension):
     """
     Creates the file name from the folder and domains that the crawler will crawl.
     the file name will be: [datetime] [net locations of domains given].[fixture]
     :param extension: The extension of the file.
-    :param input_file: The path to the input file.
+    :param schedule_id: The path to the input file.
     :param folder: The folder where the file we be saved
     :return: The full path to the file.
     """
-    return os.path.join(folder, "cookies_{}.{}".format(os.path.splitext(os.path.basename(input_file))[0], extension))
+    return os.path.join(folder,
+                        "cookies_schedule_{}_{}.{}".format(schedule_id, str(datetime.datetime.now()).replace(':', '.'),
+                                                           extension))
 
 
-def format_arguments(args, os_system):
+def format_arguments(args, os_system, schedule_id):
     """
     Formats the arguments given to the script.
     :param args: The args given to the script.
@@ -74,8 +76,8 @@ def format_arguments(args, os_system):
     """
     if args.silent:
         args.log_file = os.devnull
-    elif args.log_file == '':
-        args.log_file = generate_file_name(args.logs_folder, args.input_file, LOG_FIXTURE)
+    else:
+        args.log_file = generate_file_name(args.logs_folder, schedule_id, LOG_FIXTURE)
     check_directory_exists(args.logs_folder)
     driver_path = os.path.join(DRIVER_FOLDER, DRIVER_NAMES[os_system])
     return args, driver_path
@@ -115,84 +117,88 @@ def handle_cookie(cookie, url):
         cookie_info_id = session.query(CookieInfo).filter(CookieInfo.cookie_name == cookie['name']).scalar().id
     else:
         cookie_info_id = scrap_cookie(cookie, url)
-    cookie_midal = Cookies(cookie_info_id=cookie_info_id, cookie_source=0, cookie_attr=json.dumps(cookie),
+    Cookie = Cookies(cookie_info_id=cookie_info_id, cookie_source=0, cookie_attr=json.dumps(cookie),
                            datetime=datetime.datetime.now())
-    session.add(cookie_midal)
+    session.add(Cookie)
     session.commit()
-    return cookie_midal.id
+    return Cookie.id
 
 
-def handle_url(url, driver):
+def handle_url(url, driver, stats):
     """
     Retrieves the cookies from the url.
     :param UrlScans url: The url item in the db.
     :param driver: The headless browser driver
     :return:
     """
-    print("getting url")
     driver.get(url.url)
-    print("done")
     for cookie in driver.get_cookies():
         cookie_id = handle_cookie(cookie, url.url)
+        stats.cookies_extracted_fp = stats.cookies_extracted_fp + 1
         session.add(ExtractedCookies(url_id=url.id, cookie_id=cookie_id))
 
-
-def loading_bar(done, total):
-    """
-    Print how much of the cookie gathering is done.
-    :param done: How much urls have been checked
-    :param total: How much urls were read from the file
-    """
-    sys.stdout.write("\rCookie extracting: %d%%" % int((done / float(total) * 100)))
-    sys.stdout.flush()
-
-
-def handle_input(rows, schedule_id, driver):
+def handle_input(rows, stats, driver):
     """
     Handle all of the rows that were retrieved from the db.
     :param rows: The rows retrieved from the db.
-    :param schedule_id: the id of the scheduled tastblCookie_Infok.
+    :param schedule_id: the id of the muncher schedule.
     :param driver: The phantomJS driver for extracting the cookies.
-
     """
-    done = 1
     total = len(rows)
+    bar = Bar('Cookie Extracting', max=total)
     print("Starting cookie extraction on {} urls...".format(total))
-    sys.stdout.write("\rCookie extracting: 0%")
     for row in rows:
-        handle_url(row, driver)
-        loading_bar(done, total)
-        done += 1
+        handle_url(row, driver, stats)
+        bar.next()
+    bar.finish()
 
-
-def run(schedule_id, args, driver_path):
+def run(stats, args, driver_path):
     """
     Read the urls from the urls table with the given schedule id and find the cookies for each url .
     :param schedule_id: The scheduled task id.
     :param args: The args from the config table.
     :param driver_path: the path to the driver.
     """
-    args.log_file = 'a.log'
+    logging.basicConfig(filename=args.log_file, level=logging.ERROR)
     driver = webdriver.PhantomJS(executable_path=driver_path, service_log_path=args.log_file)
-    rows = session.query(UrlScans).filter(UrlScans.schedule_id == schedule_id).all()
-    stats = session.query(CookieInfo).filter(MuncherStats.schedule_id == schedule_id).scalar()
-    if not stats:
-        with open(args.log_file, 'w') as log:
-            log.write("ERROR: No muncher stats was created!! check if you ran process1.py, if you did check logs for "
-                      "run with schedule id: {}".format(schedule_id))
-    handle_input(rows, schedule_id, driver)
+    rows = session.query(UrlScans).filter(UrlScans.schedule_id == stats.schedule_id).all()
+    stats.cookies_extracted_fp = 0
+    stats.cookies_log_path = args.log_file
     session.commit()
-    session.close()
+    handle_input(rows, stats, driver)
     driver.quit()
+
+
+def get_stats(schedule_id):
+    if session.query(exists().where(MuncherStats.schedule_id == schedule_id)).scalar():
+        stats = session.query(MuncherStats).filter(MuncherStats.schedule_id == schedule_id).scalar()
+        session.add(stats)
+        return stats
+    else:
+        print("There is No muncher stats created! please create one and run process1 first!".format(schedule_id))
+        return None
 
 
 def main():
     parser = create_parser()
     # parser_args = parser.parse_args()
-    schedule = session.query(MuncherSchedule).get(1)
+    schedule_id = 3
+    schedule = session.query(MuncherSchedule).get(schedule_id)
     config = session.query(MuncherConfig).get(schedule.config_id)
-    args, driver_path = format_arguments(DotMap(json.loads(config.json_params)), 'linux_64')
-    run(1, args, driver_path)
+    stats = get_stats(schedule_id)
+    args, driver_path = format_arguments(DotMap(json.loads(config.json_params)), 'windows', schedule_id)
+    try:
+        start = datetime.datetime.now()
+        run(stats, args, driver_path)
+        stats.cookie_last_result = 'finished'
+        stats.cookie_scan_duration = (datetime.datetime.now() - start).seconds
+        session.commit()
+        session.close()
+    except Exception as e:
+        logging.error(e.message)
+        stats.cookie_last_result = 'aborted'
+        session.commit()
+        session.close()
 
 
 if __name__ == '__main__':

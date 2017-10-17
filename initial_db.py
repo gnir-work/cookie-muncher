@@ -37,3 +37,4 @@ if __name__ == '__main__':
     session = Session(engine)
     create_config(session)
     create_schedule(session, 2, 1)
+    session.close()
