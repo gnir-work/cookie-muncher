@@ -14,17 +14,7 @@ import os
 import json
 from urllib.parse import urlparse
 from db import engine, MuncherConfig, MuncherSchedule, MuncherStats
-from utils import check_directory_exists, LOG_FIXTURE
-
-
-def create_parser():
-    """
-    Creates the parser with all of the expected arguments.
-    :return: The configured parser instance.
-    """
-    parser = argparse.ArgumentParser(description="A web scrapping cli tool")
-    parser.add_argument('-i', '--id', dest='id', type=int, help='The id of the MuncherSchedule.')
-    return parser
+from utils import check_directory_exists, LOG_FIXTURE, create_parser
 
 
 def generate_file_name(folder, schedule_id, fixture):

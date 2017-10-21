@@ -13,7 +13,7 @@ DEFAULT_DELAY = 0
 PARAMS = {
     "domain_only": True,
     "depth": DEFAULT_DEPTH,
-    "domains": "https://animetake.tv/",
+    "domains": "https://tumblr.com/",
     "silent": False,
     "log_file": None,
     "logs_folder": DEFAULT_LOG_FOLDER,
