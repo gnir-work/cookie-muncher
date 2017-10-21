@@ -57,6 +57,9 @@ class UrlData(object):
                 cookie['domain'], cookie['httponly'], cookie['secure'],
                 cookie['value'], cookie['expires']]
 
+    def get_data(self):
+        return {'url': self.url.url, 'cookies': self.cookies}
+
 
 class Extractor(object):
     def __init__(self, schedule_id):

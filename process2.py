@@ -118,7 +118,7 @@ def handle_cookie(cookie, url):
     else:
         cookie_info_id = scrap_cookie(cookie, url)
     Cookie = Cookies(cookie_info_id=cookie_info_id, cookie_source=0, cookie_attr=json.dumps(cookie),
-                           datetime=datetime.datetime.now())
+                     datetime=datetime.datetime.now())
     session.add(Cookie)
     session.commit()
     return Cookie.id
@@ -137,6 +137,7 @@ def handle_url(url, driver, stats):
         stats.cookies_extracted_fp = stats.cookies_extracted_fp + 1
         session.add(ExtractedCookies(url_id=url.id, cookie_id=cookie_id))
 
+
 def handle_input(rows, stats, driver):
     """
     Handle all of the rows that were retrieved from the db.
@@ -151,6 +152,7 @@ def handle_input(rows, stats, driver):
         handle_url(row, driver, stats)
         bar.next()
     bar.finish()
+
 
 def run(stats, args, driver_path):
     """
