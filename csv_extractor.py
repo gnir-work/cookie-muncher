@@ -1,11 +1,6 @@
-import argparse
-
 import datetime
-import json
 
-from sqlalchemy.orm import Session
-
-from db import MuncherSchedule, UrlScans, ExtractedCookies, Cookies, engine, CookieInfo
+from db import UrlScans, ExtractedCookies, Cookies
 from csv import writer
 
 from extractor import Extractor
@@ -40,8 +35,7 @@ class UrlData(object):
     def _create_row_for_csv(self, cookie):
         return [self.url.url, cookie['extraction_time'], cookie['name'], cookie['purpose'], cookie['about'],
                 cookie['domain'], cookie['httponly'], cookie['secure'],
-                cookie['value'], cookie['expires']]
-
+                cookie['value'], cookie.get('expires', 'No expiration date found!')]
 
 
 class CsvExtractor(Extractor):
@@ -70,7 +64,7 @@ class CsvExtractor(Extractor):
     @property
     def output_file_name(self):
         if not self._output_file_name:
-            self._output_file_name = "{} {}".format(self.schedule.title, datetime.datetime.now())
+            self._output_file_name = "{} {}.csv".format(self.schedule.title, datetime.datetime.now())
         return self._output_file_name
 
     @property

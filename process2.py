@@ -90,8 +90,8 @@ def scrap_cookie(cookie, url):
     :param url: The url from which the cookie was loaded.
     :return: The id of the item created in the db for the cookie.
     """
-    about = "Unknown"
-    purpose = "There is not yet any general information about this cookie based on its name only. If you have any information about this cookie, please get in touch."
+    about = "There is not yet any general information about this cookie based on its name only. If you have any information about this cookie, please get in touch."
+    purpose = "Unknown"
     page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
     soup = Soup(page_content, SOUP_PARSER)
     if soup.find('h2').text == FOUND_COOKIE_H2:
@@ -148,6 +148,7 @@ def handle_input(rows, stats, driver):
     total = len(rows)
     bar = Bar('Cookie Extracting', max=total)
     print("Starting cookie extraction on {} urls...".format(total))
+    bar.start()
     for row in rows:
         handle_url(row, driver, stats)
         bar.next()
