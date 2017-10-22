@@ -90,8 +90,8 @@ def scrap_cookie(cookie, url):
     :param url: The url from which the cookie was loaded.
     :return: The id of the item created in the db for the cookie.
     """
-    about = None
-    purpose = None
+    about = "There is not yet any general information about this cookie based on its name only. If you have any information about this cookie, please get in touch."
+    purpose = "Unknown"
     page_content = requests.get(COOKIEPEDIA_PATH_FORMAT.format(cookie['name']), verify=False).content
     soup = Soup(page_content, SOUP_PARSER)
     if soup.find('h2').text == FOUND_COOKIE_H2:
@@ -118,7 +118,7 @@ def handle_cookie(cookie, url):
     else:
         cookie_info_id = scrap_cookie(cookie, url)
     Cookie = Cookies(cookie_info_id=cookie_info_id, cookie_source=0, cookie_attr=json.dumps(cookie),
-                           datetime=datetime.datetime.now())
+                     datetime=datetime.datetime.now())
     session.add(Cookie)
     session.commit()
     return Cookie.id
@@ -137,6 +137,7 @@ def handle_url(url, driver, stats):
         stats.cookies_extracted_fp = stats.cookies_extracted_fp + 1
         session.add(ExtractedCookies(url_id=url.id, cookie_id=cookie_id))
 
+
 def handle_input(rows, stats, driver):
     """
     Handle all of the rows that were retrieved from the db.
@@ -147,10 +148,12 @@ def handle_input(rows, stats, driver):
     total = len(rows)
     bar = Bar('Cookie Extracting', max=total)
     print("Starting cookie extraction on {} urls...".format(total))
+    bar.start()
     for row in rows:
         handle_url(row, driver, stats)
         bar.next()
     bar.finish()
+
 
 def run(stats, args, driver_path):
     """

@@ -1,0 +1,106 @@
+<html>
+  <head>
+    <META http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Crystal CookieScanner Report</title>
+  </head>
+  <body>
+    <style type="text/css">
+          #crystalrptbody {table-layout:fixed;border-spacing:0;border-collapse:collapse;}
+          #crystalrptbody a{color:#2775ec;text-decoration:none;font-weight:normal;}
+          #crystalrptbody a:hover{color:#ef620c;text-decoration:underline;}
+		  tab1 { padding-left: 4em; }
+		  hr { 
+		      display: block;
+		      margin-top: 0.5em;
+		      margin-bottom: 0.5em;
+		      margin-left: auto;
+		      margin-right: auto;
+		      border-style: inset;
+		      border-width: 1px;
+		  }
+        </style>
+    <table id="crystalrptbody" border="0" cellpadding="0" cellspacing="0" width="700" bgcolor="#ffffff" style="word-break: normal;width:700px; max-width:700px;table-layout:fixed!important;border-spacing:0!important;border-collapse:collapse!important;word-wrap: break-word;">
+      <tr>
+        <td align="left" style="padding: 10px;"><img src="http://www.crystalthinking.com/wp-content/uploads/2017/08/Asset-1@2x.png" alt="Crystalthinking" height="50" width="280"border="0"></td>
+      </tr>
+      <tr>
+        <td align="left" valign="top" style="padding: 10px;"><br><table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:700px;max-width:700px;word-wrap: break-word;">
+            <tr>
+              <td align="left" valign="top"><br><font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="5" color="#1f2327">CookieScanner Report</font><br><br><br><font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="4" color="#0059b3">Top Line Summary</font><br><br><font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616">
+		  
+                Scan Title: &nbsp;{{scan_title}}<br>
+                Scan Description:&nbsp;{{scan_description}} <br>
+                Scan Date:&nbsp;{{scan_date}}<br>
+                Domain name:&nbsp;{{domain_name}}<br>
+                Total Cookies:&nbsp;{{cookies_count}}
+            <br><br><br></font>
+			
+			
+                <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="4" color="#0059b3">Scan Results</font><br><br><font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616">{{cookies_count}} cookies were identified.<br>{{unidentified_cookies_count}} cookies unclassified and need manual classification description.</font>
+                {% for cookies_by_type in cookies_by_types %}<br><br><hr>
+                  <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:24px;">
+                      <tr>
+                        <td align="left" valign="top" style="padding-top:22px;padding-bottom: 4px;border-bottom: 1px solid #e1e1e1">
+                         
+<font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="5" color="#1f2327">Cookie Categories</font><br><br><br><font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="4" color="#0059b3">Category: {{cookies_by_type.type}}
+                  ({{cookies_by_type.cookies|length}})</font><br><br><font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616">
+				  
+				  
+                        </td>
+                      </tr>
+                      <tr>
+                        <td align="left" valign="top" style="padding-top:12px;padding-bottom:6px;">
+                          <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616">working on description of type...</font><br><br></td>
+                      </tr>
+                    </table>
+                    <table cellpadding="3" cellspacing="0" width="100%">
+                      <tr>
+                        <td align="left" valign="top" style="border-bottom: 1px solid #cccccc" nowrap>
+                          <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="1" color="#161616"><b>COOKIE NAME</b></font>
+                        </td>
+                        <td align="left" valign="top" style="border-bottom: 1px solid #cccccc" nowrap>
+                          <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="1" color="#161616"><b>HTTPONLY</b></font>
+                        </td>
+                        <td align="left" valign="top" style="border-bottom: 1px solid #cccccc" nowrap>
+                          <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="1" color="#161616"><b>EXPIRY</b></font>
+                        </td>
+                      </tr>
+                      {% for cookie in cookies_by_type.cookies %}
+                      <tr>
+                        <td align="left" valign="top" bgcolor="#f8f8f8" style="padding-top: 4px;">
+                          <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616"><b>{{cookie.name}}</b></font>
+                        </td>
+                        <td align="left" valign="top" bgcolor="#f8f8f8" style="padding-top: 4px;" nowrap>
+                          <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616">{{cookie.httponly}}</font>
+                        </td>
+                        <td align="left" valign="top" bgcolor="#f8f8f8" style="padding-top: 4px;" nowrap>
+                          <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616">{{ cookie.expires}}</font>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td colspan="4" align="left" valign="top" bgcolor="#f8f8f8" style="padding-top: 4px;word-break: break-all;">
+                          <div>
+                            <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616"><small><b>First found in page:
+                          </b><a href="https://www.national-lottery.co.uk/" target="_blank">{{cookie.first_found_url}}</a></small></font>
+                          </div>
+                          <div style="margin-top:4px;margin-bottom:0px;">
+                            <font face="Segoe UI, Arial, Helvetica, Verdana, sans-serif" size="2" color="#161616"><small><b>Cookie purpose description:
+                          </b>{{ cookie.about }}</small></font>
+                          </div>
+                        </td>
+                      </tr>
+                     {% endfor %}
+                    </table>
+                  {% endfor %}
+              </td>
+            </tr>
+        </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+

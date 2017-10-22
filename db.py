@@ -2,8 +2,8 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy import create_engine
 
-DB_URL = URL(drivername='mysql+pymysql', username='nir', password='geller', host='192.168.1.16',
-             port=3306, database='Marketing1')
+DB_URL = URL(drivername='mysql+pymysql', username='nir', password='geller', host='localhost',
+             port=3306, database='Marketing')
 
 Base = automap_base()
 

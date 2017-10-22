@@ -17,6 +17,7 @@ class CookiemuncherPipeline(object):
     def process_item(self, item, spider):
         self.session.add(UrlScans(schedule_id=spider.settings.get(SCHEDULE_ID), url=item['link']))
         self.session.commit()
+        print('saved {} to the db!'.format(item['link']))
         return item
 
     def close_spider(self, spider):
