@@ -17,6 +17,9 @@ class UrlData(object):
         self.cookies = []
 
     def load_cookie_data(self):
+        """
+        Loads the data for the current url from the db.
+        """
         extracted_cookies = self.session.query(ExtractedCookies).filter(ExtractedCookies.url_id == self.url.id).all()
         cookies = [self.session.query(Cookies).get(extracted_cookie.cookie_id) for extracted_cookie in
                    extracted_cookies]
@@ -25,7 +28,7 @@ class UrlData(object):
 
     def write_to_csv(self, csv_writer):
         """
-
+        Writes the data to the csv.
         :param csv.writer csv_writer:
         :return:
         """
@@ -47,6 +50,9 @@ class CsvExtractor(Extractor):
         self._urls = None
 
     def extract(self):
+        """
+        Writes the data found from this run to a csv file.
+        """
         self.csv_writer.writerow(ROW_HEADERS)
         for url in self.urls:
             print("writing {} to {}".format(url.url, self._output_file_name))
